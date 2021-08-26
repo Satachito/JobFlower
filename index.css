@@ -1,0 +1,86 @@
+html {
+;	height					: 100%
+}
+
+body {
+;	height					: 100vh
+;	margin					: 0
+;	display					: grid
+;	grid-template-rows		: auto 1fr auto
+;	grid-template-columns	: auto 1fr auto
+}
+
+main {
+;	overflow				: scroll
+;	position				: relative
+}
+
+canvas {
+;	position				: absolute
+}
+
+header, footer {
+;	grid-column				: 1 / 4
+}
+
+footer {
+;	font-family				: cursive
+;	border-top				: 1px black solid
+;	padding					: 2px 8px 4px 8px
+}
+
+header {
+;	border-bottom			: 1px black solid
+;	padding					: 4px 8px
+}
+
+nav {
+;	width					: 0
+;	overflow				: scroll
+;	border-right			: 1px black solid
+}
+
+aside {
+;	border-left				: 1px black solid
+;	padding					: 8px
+}
+
+#DIALOG_PROC, #DIALOG_PROG, #DIALOG_GENERIC {
+;	width					: 100%
+}
+
+textarea {
+;	width					: 100%
+}
+
+#APP_NAME {
+;	font-family				: cursive
+;	margin					: 8px
+}
+
+label {
+;	font-family				: monospace
+}
+
+#MODE_SELECT, #CANVAS_SIZE {
+;	border-radius			: 5px
+}
+
+#MODE_COMM {
+;	border-radius			: 7px
+}
+
+#MODE_FILE {
+;	border-radius			: 9px
+}
+
+input[ type=button ] {
+;	margin					: 2px
+;	border-width			: 1px
+}
+
+input[ type=button ]:hover {
+;	margin					: 1px
+;	border-width			: 2px
+}
+

@@ -1,0 +1,21 @@
+{
+  "name": "JobFlower",
+  "version": "0.0",
+  "description": "JobFlower",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron --inspect ."
+  },
+  "repository": "https://github.com/Satachito/JobFlower",
+  "keywords": [
+  	"Job",
+	"Batch",
+	"Flowchart",
+    "Electron"
+  ],
+  "author": "GitHub",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^13.1.9"
+  }
+}

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang=zxx>
+
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+<link rel="stylesheet" type="text/css" href="index.css" />
+
+<header>
+<span id=APP_NAME>JobFlower</span>
+<input type=button		id=MODE_SELECT		value=Select		>
+<input type=button		id=MODE_EXEC		value=Exec			>
+<input type=button		id=MODE_SPAW		value=Spawn			>
+<input type=button		id=MODE_PROG		value=Program		>
+<input type=button		id=MODE_COMM		value=Comment		>
+<input type=checkbox	id=DIALOG_TYPE_NEW		><label for=DIALOG_TYPE_NEW		>New		</label>
+<input type=checkbox	id=PATH_TYPE_ABSOLUTE	><label for=PATH_TYPE_ABSOLUTE	>Absolute	</label>
+<input type=button		id=MODE_FILE		value=File			>
+<input type=button		id=MODE_STD			value=StdIn/Out		>
+<input type=button		id=MODE_ARG			value=Args			>
+<input type=button		id=MODE_IMP			value="Hard coded"	>
+<input type=button		id=CANVAS_SIZE		value="Canvas size"	>
+</header>
+<nav>
+</nav>
+<main>
+	<canvas id=ELEMENT_C width=2048 height=1024>			</canvas>
+	<canvas id=CONTROL_C width=2048 height=1024 tabindex=0>	</canvas>
+</main>
+<aside>
+	<span>stdout:</span><img id=CLEAR_OUT_TA src=Trash.png></img><br>
+	<textarea id=OUT_TA readonly></textarea><br>
+	<span>stderr:</span><img id=CLEAR_ERR_TA src=Trash.png></img><br>
+	<textarea id=ERR_TA readonly></textarea><br>
+	<span>logger:</span><img id=CLEAR_LOG_TA src=Trash.png></img><br>
+	<textarea id=LOG_TA readonly></textarea><br>
+</aside>
+<footer>(C)2021 SliP LLC, Tokyo. Written by Satoru Ogura</footer>
+
+<dialog id=DIALOG_PROG>
+	<select id=EXTENSION>
+	</select>
+	<br>
+	<textarea id=PROG rows=24></textarea>
+	<br>
+	<button id=DIALOG_PROG_CANCEL>		Cancel	</button>
+	<button id=DIALOG_PROG_OK class=OK>	OK		</button>
+</dialog>
+
+<dialog id=DIALOG_PROC>
+	<span id=PROC_TYPE></span><br>
+	<textarea id=PROC rows=24></textarea>
+	<br>
+	<button id=DIALOG_PROC_CANCEL>		Cancel	</button>
+	<button id=DIALOG_PROC_OK class=OK>	OK		</button>
+</dialog>
+
+<dialog id=DIALOG_GENERIC>
+	<input id=GENERIC1>
+	<br>
+	<textarea id=GENERIC3 rows=24></textarea>
+	<br>
+	<button id=DIALOG_GENERIC_CANCEL>		Cancel	</button>
+	<button id=DIALOG_GENERIC_OK class=OK>	OK		</button>
+</dialog>
+
+<dialog id=DIALOG_CANVAS_SIZE>
+	Width:<input id=CANVAS_SIZE_W>
+	<br>
+	Height:<input id=CANVAS_SIZE_H>
+	<br>
+	<button id=DIALOG_CANVAS_SIZE_CANCEL>		Cancel	</button>
+	<button id=DIALOG_CANVAS_SIZE_OK class=OK>	OK		</button>
+</dialog>
+
+<script type=module src="./renderer.js"></script>
+
