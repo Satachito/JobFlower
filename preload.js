@@ -90,8 +90,8 @@ contextBridge.exposeInMainWorld(
 )
 
 contextBridge.exposeInMainWorld(
-	'sendCommCM'
-,	( ...$ ) => ipcRenderer.send( 'commCM', ...$ )
+	'sendCommentCM'
+,	( ...$ ) => ipcRenderer.send( 'commentCM', ...$ )
 )
 
 contextBridge.exposeInMainWorld(

@@ -43,13 +43,12 @@ nav {
 aside {
 ;	border-left				: 1px black solid
 ;	padding					: 8px
+;	overflow				: scroll
+}
+aside textarea {
 }
 
-#DIALOG_PROC, #DIALOG_PROG, #DIALOG_GENERIC {
-;	width					: 100%
-}
-
-textarea {
+#DIALOG_PC, #DIALOG_PROGRAM, #DIALOG_GENERIC {
 ;	width					: 100%
 }
 
@@ -66,7 +65,7 @@ label {
 ;	border-radius			: 5px
 }
 
-#MODE_COMM {
+#MODE_COMMENT {
 ;	border-radius			: 7px
 }
 
@@ -82,5 +81,33 @@ input[ type=button ] {
 input[ type=button ]:hover {
 ;	margin					: 1px
 ;	border-width			: 2px
+}
+
+/*	Dialog	*/
+dialog {
+;	border					: 1px solid #ddd
+;	border-radius			: 8px
+;	background-color		: white
+;	padding					: 16px
+}
+dialog .OKCancel {
+;	display					: grid
+;	grid-template-columns	: 1fr auto 8px auto
+}
+dialog button {
+;	width					: 109px
+;	height					: 29px
+;	border-radius			: 8px
+;	border					: none
+;	color					: #404040
+;	background				: #cdc9cc
+}
+dialog .OK {
+;	color					: white
+;	background				: linear-gradient( #2891ff, #017aff )
+}
+dialog textarea {
+;	width					: 100%
+;	margin-bottom           : 16px
 }
 

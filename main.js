@@ -59,7 +59,7 @@ const
 OpenDialog = () => ( dialog.showOpenDialogSync() ?? [] ).forEach( $ => CreateWindow( $ ) )
 
 const
-SaveDialog = () => {
+SaveDialog = async () => {
 	const _ = dialog.showSaveDialogSync()
 	_ && (
 		await ( promisify( writeFile )( _, '[[],[]]' ) )
@@ -157,12 +157,12 @@ console.log(
 
 ipcMain.on(
 	'clipboard'
-,	( ev, $ ) => ( console.log( $ ), clipboard.writeText( $ ) )
+,	( ev, $ ) => clipboard.writeText( $ )
 )
 
 ipcMain.handle(
 	'clipboard'
-,	ev => ( console.log( clipboard.readText() ), clipboard.readText() )
+,	ev => clipboard.readText()
 )
 
 ipcMain.on(
@@ -223,7 +223,7 @@ ipcMain.on(
 		cm.append( new MenuItem( { type	: 'separator' } ) )
 		cm.append( new MenuItem( { label: 'Unlink'			, click: () => SendMenu( 'fileUnlink'		, $ ) } ) )
 		cm.append( new MenuItem( { label: 'Make'			, click: () => SendMenu( 'fileMake'			, $ ) } ) )
-		cm.append( new MenuItem( { label: 'Write sh script'	, click: () => SendMenu( 'fileScript'		, $ ) } ) )
+		cm.append( new MenuItem( { label: 'Shell script'	, click: () => SendMenu( 'fileScript'		, $ ) } ) )
 		cm.popup()
 	}
 )
@@ -239,6 +239,7 @@ ipcMain.on(
 		cm.append( new MenuItem( { label: 'Edit'			, click: () => SendMenu( 'elementEdit'		, $ ) } ) )
 		cm.append( new MenuItem( { type	: 'separator' } ) )
 		cm.append( new MenuItem( { label: 'Run'				, click: () => SendMenu( 'procRun'			, $ ) } ) )
+		cm.append( new MenuItem( { label: 'Run all'			, click: () => SendMenu( 'procRunAll'		, $ ) } ) )
 		cm.popup()
 	}
 )
@@ -307,13 +308,17 @@ ipcMain.handle(
 ,	async ( ev, command ) => (
 		chdir( dirname( ev.sender.browserWindowOptions.webPreferences.file ) )
 	,	await new Promise(
-			( s, j ) => exec(
-				command
-			,	( error, stdout, stderr ) => (
-					error && j( error )
-				,	s( { stdout, stderr } )
+			( s, j ) => {
+console.log( '>exec:', command )
+				exec(
+					command
+				,	( error, stdout, stderr ) => (
+						error 
+						?	( console.log( '*exec:', command ), j( error ) )
+						:	( console.log( '>exec:', command ), s( { stdout, stderr } ) )
+					)
 				)
-			)
+			}
 		)
 	)
 )
@@ -324,6 +329,7 @@ ipcMain.handle(
 		chdir( dirname( ev.sender.browserWindowOptions.webPreferences.file ) )
 	,	await new Promise(
 			( s, j ) => {
+console.log( '>spawn:', command )
 				const $ = spawn( command, args )
 				stdin && createReadStream( stdin ).pipe( $.stdin )
 				stdout
@@ -332,8 +338,8 @@ ipcMain.handle(
 				stderr
 				?	$.stderr.pipe( createWriteStream( stderr ) )
 				:	$.stderr.on( 'data', $ => Send( 'stderr', $ ) )
-				$.on( 'close', ( code, signal ) => s( code, signal ) )
-				$.on( 'error', $ => j( $ ) )
+				$.on( 'close', ( code, signal ) => ( console.log( '<spawn:', command ), s( code, signal ) ) )
+				$.on( 'error', $ => ( console.log( '*spawn:', command ), j( $ ) ) )
 			}
 		)
 	)

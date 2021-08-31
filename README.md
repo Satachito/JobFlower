@@ -1,54 +1,152 @@
-# electron-quick-start-MOD
-
-This is a modification of Electron's electron-quick-start repository which includes sample codes for:
-
-* Typical application using holy grail layout.
-* IPC.
-* Menu handling.
-* Access to process.platform. ( mac, win ... )
-* Clipboard handling.
+JobFlower
 
 
-**Clone and run for a quick way to see Electron in action.**
 
-This is a minimal Electron application based on the [Quick Start Guide](https://electronjs.org/docs/tutorial/quick-start) within the Electron documentation.
+# JobFlower
 
-**Use this app along with the [Electron API Demos](https://electronjs.org/#get-started) app for API code examples to help you get started.**
+## Tutorial
+### Basics
 
-A basic Electron application needs just these files:
+#### On Launch
 
-- `package.json` - Points to the app's main file and lists its details and dependencies.
-- `main.js` - Starts the app and creates a browser window to render HTML. This is the app's **main process**.
-- `index.html` - A web page to render. This is the app's **renderer process**.
+The save dialog is displayed at startup. Enter your first `.job` file name, such as `Basics.job`, and press `OK`.
 
-You can learn more about each of these components within the [Quick Start Guide](https://electronjs.org/docs/tutorial/quick-start).
+The specified file will be automatically created and an editor window opens.
 
-## To Use
 
-To clone and run this repository you'll need [Git](https://git-scm.com) and [Node.js](https://nodejs.org/en/download/) (which comes with [npm](http://npmjs.com)) installed on your computer. From your command line:
 
-```bash
-# Clone this repository
-git clone https://github.com/Satachito/electron-quick-start-MOD
-# Go into the repository
-cd electron-quick-start-MOD
-# Install dependencies
-npm install
-# Run the app
-npm start
+#### Parts Names
+
+
+
+#### Create Exec Box
+
+Push the `Exec` button at the top left of the window, then draw a rectangle with your mouse.
+
+When you release the mouse button, the Exec Dialog is displayed.
+
+Type `echo Hello JobFlower` and press OK, to create the Exec Box.
+
+Right click the Exec Box to display the context menu and select `Run` from the context menu to display the output `Hello JobFlower` in `stdout` textarea of the drawer on the right.
+
+
+
+#### Create Spawn Box
+
+Push the `Spawn` button at the top left of the window, then draw a rectangle with your mouse.
+
+When you release the mouse button, the Spawn Dialog is displayed.
+
+Type `curl https://google.com` and press OK, to create the Spawn Box.
+
+Right click the Spawn Box to display the context menu and select `Run` from the context menu to display the outputs in `stdout`and `stderr` textarea of the drawer on the right.
+
+
+
+ #### Create Program Box
+
+Push the `Program` button at the top left of the window, then draw a rectangle with your mouse.
+
+When you release the mouse button, the Program Dialog is displayed.
+
+Select `js` from selector and type in program below and press OK, to create the Program Box.
+
+```JavaScript
+for ( let i = 0; i < 10; i++ ) {
+    setTimeout(
+        () => ( console.log( i ), console.error( i * 1000 ) )
+    ,   i * 1000
+    )
+}
 ```
 
-Note: If you're using Linux Bash for Windows, [see this guide](https://www.howtogeek.com/261575/how-to-run-graphical-linux-desktop-applications-from-windows-10s-bash-shell/) or use `node` from the command prompt.
 
-## Resources for Learning Electron
 
-- [electronjs.org/docs](https://electronjs.org/docs) - all of Electron's documentation
-- [electronjs.org/community#boilerplates](https://electronjs.org/community#boilerplates) - sample starter apps created by the community
-- [electron/electron-quick-start](https://github.com/electron/electron-quick-start) - a very basic starter Electron app
-- [electron/simple-samples](https://github.com/electron/simple-samples) - small applications with ideas for taking them further
-- [electron/electron-api-demos](https://github.com/electron/electron-api-demos) - an Electron app that teaches you how to use Electron
-- [hokein/electron-sample-apps](https://github.com/hokein/electron-sample-apps) - small demo apps for the various Electron APIs
+Right click the Program Box to display the context menu and select `Run` from the context menu to display  the outputs in `stdout`and `stderr` textarea of the drawer on the right.
 
-## License
 
-[CC0 1.0 (Public Domain)](LICENSE.md)
+
+#### Create Commen Box
+
+Push the `Comment` button at the top of the window, then draw a rectangle with your mouse.
+
+When you release the mouse button, the Comment Dialog is displayed.
+
+Type `JobFlower` and press OK, to create the Comment Box.
+
+
+
+#### Create File Box
+
+Push the `File` button at the top of the window, then draw a rectangle with your mouse.
+
+When the mouse button is released, the Save File Dialog or Open File Dialog will be displayed according to the state of`New` checkbox.
+
+Select file or type file name and press OK, to create the File Box.
+
+If the `Absolute` checkbox is checked, the path is absolute. Otherwise, the path is relative to your `.job` file.
+
+
+
+### Connect File Box and Proc( Exec/Spawn/Program ) Box
+
+#### Stdin
+
+Push the `Stdin/out/err` button at the top of the window, then click File Box and drag to Proc Box.
+
+#### Stdout
+
+Push the `Stdin/out/err` button at the top of the window, then click Proc Box and drag to File Box.
+
+If there is no other connection between these Proc and File Box, this connection is treated as `stdout`.
+
+#### Stderr
+
+Push the `Stdin/out/err` button at the top of the window, then click Proc Box and drag to File Box.
+
+If there is one connection between these Proc and File Box, this connection is treated as `stderr`.
+
+#### Args
+
+Push the `Args` button at the top of the window, then click Proc Box and drag to File Box or vice versa.
+Arguments are supplied in the order in which they are combine.
+
+#### Hard Coded
+
+Push the `Hard Coded` button at the top of the window, then click Proc Box and drag to File Box or vice versa.
+Use this if your files are hard coded in your program.
+
+
+
+### Making file
+
+Right click your `File Box` and select `Make` from the contenxt menu appeared.
+
+This runs all the processes required to create the target file.
+
+
+
+### Run All
+
+Right click your `Proc Box` and select `Run all` from the context menu appeared.
+
+This runs all the upstream processes then run the target proc.
+
+
+
+## Advanced Topic
+
+#### Exec Box
+
+ExecBox uses shell for execution. So you can put in multi line command , place stdin/out/err, pipe and here document in the ExecBox.
+
+#### Spawn Box
+
+While ExecBox is running, stdout and stderr are buffered and you can see the result only at the end of run.
+
+But if you run a process that takes a long time, for example, you may need to monitor its progress.
+
+In such cases, SpawnBox will display the data to 'stdout' or 'stderr' without being buffered.
+
+Spawn Box spawns command directory without using 'sh', so avoid using '>', '<', '|' and '<<'.
+

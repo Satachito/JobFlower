@@ -56,7 +56,7 @@ var
 relations	= []	//	[ type: S, id: S, id: S ] 	type: ARG, STD, IMP
 
 var
-elements	= []	//	[ id: S, type: S, rect:[ N, N, N, N ], supp: ANY ]	type: proc, EXEC, SPAW, FILE, COMM
+elements	= []	//	[ id: S, type: S, rect:[ N, N, N, N ], supp: ANY ]	type: proc, EXEC, SPAWN, FILE, COMMENT
 
 const
 Adjust	= () => {
@@ -80,11 +80,11 @@ const
 TD = new TextDecoder( 'utf-8' )
 
 window.onStdout(
-	( _, $ ) => OUT_TA.textContent += TD.decode( $ )
+	( _, $ ) => Out( TD.decode( $ ) )
 )
 
 window.onStderr(
-	( _, $ ) => ERR_TA.textContent += TD.decode( $ )
+	( _, $ ) => Err( TD.decode( $ ) )
 )
 
 var
@@ -155,7 +155,7 @@ FilePath	= ( [ x, y, X, Y ] ) => {
 }
 
 const
-CommPath	= ( [ x, y, X, Y ] ) => {
+CommentPath	= ( [ x, y, X, Y ] ) => {
 	const _ = new Path2D()
 	_.moveTo( X, y )
 	_.quadraticCurveTo( X + F2, y, X + F2, y + F2 )
@@ -180,7 +180,7 @@ ProcPath	= ( [ x, y, X, Y ] ) => {
 const
 ElementPath	= e => (
 	{	FILE	: FilePath( e[ 2 ] )
-	,	COMM	: CommPath( e[ 2 ] )
+	,	COMMENT	: CommentPath( e[ 2 ] )
 	}[ e[ 1 ] ] ?? ProcPath( e[ 2 ] )
 )
 
@@ -250,12 +250,12 @@ ExecString = e => FileGeneric(
 )
 
 const
-SpawString = e => FileGeneric(
+SpawnString = e => FileGeneric(
 	e
 ,	( imps, args, stdI, stdO, stdE ) => {
 		const _		= []
-		_.push( e[ 3 ] )
-		_.push( JSON.stringify( args ) )
+		_.push( ...e[ 3 ].split( ' ' ).filter( $ => $.length ) )
+		_.push( ...args )
 		stdI && _.push( '<', stdI )
 		stdO && _.push( '>', stdO )
 		stdE && _.push( '2>', stdE )
@@ -339,6 +339,7 @@ DrawElements = moving => (
 			if ( textLines.length > 1 ) {
 				const t = y + 16
 				const b = Y - 16
+				e2d.beginPath()
 				e2d.moveTo( x, t )
 				e2d.lineTo( X, t )
 				e2d.moveTo( x, b )
@@ -372,13 +373,13 @@ DrawElements = moving => (
 						$ => DrawBottom( '' + $.size + ':' + new Date( $.mtimeMs ).toLocaleString() )
 					).catch( $ => DrawBottom( '----' ) )
 				break
-			case 'COMM':
+			case 'COMMENT':
 				break
 			case 'EXEC':
 				DrawBottom( ExecString( e ).split( '\n' )[ 0 ] )
 				break
-			case 'SPAW':
-				DrawBottom( SpawString( e ) )
+			case 'SPAWN':
+				DrawBottom( SpawnString( e ) )
 				break
 			default:
 				DrawBottom( ProgString( e ) )
@@ -387,7 +388,7 @@ DrawElements = moving => (
 
 			switch ( e[ 1 ] ) {	//	type
 			case 'FILE':
-			case 'COMM':
+			case 'COMMENT':
 				break
 			default:
 				{	const
@@ -419,19 +420,45 @@ DrawElements = moving => (
 
 const
 c2d = CONTROL_C.getContext( '2d' )
+c2d.fillStyle = '#0002'
 c2d.strokeStyle = 'red'
 
 const
 ClearControls = () => c2d.clearRect( 0, 0, CONTROL_C.width, CONTROL_C.height )
 
+const
+Out = $ => (
+	OUT_TA.textContent += $
+,	OUT_TA.scrollTop = OUT_TA.scrollHeight
+)
+const
+Err = $ => (
+	ERR_TA.textContent += $
+,	ERR_TA.scrollTop = ERR_TA.scrollHeight
+)
+const
+Sys = ( ...$ ) => (
+	SYS_TA.textContent += $.join( '\n' ) + '\n'
+,	SYS_TA.scrollTop = SYS_TA.scrollHeight
+)
 CLEAR_OUT_TA	.onclick = () => OUT_TA.textContent = ''
 CLEAR_ERR_TA	.onclick = () => ERR_TA.textContent = ''
-CLEAR_LOG_TA	.onclick = () => LOG_TA.textContent = ''
+CLEAR_SYS_TA	.onclick = () => SYS_TA.textContent = ''
+COPY_OUT_TA		.onclick = () => window.sendClipboard( OUT_TA.textContent )
+COPY_ERR_TA		.onclick = () => window.sendClipboard( ERR_TA.textContent )
+COPY_SYS_TA		.onclick = () => window.sendClipboard( SYS_TA.textContent )
 const
-Log = $ => LOG_TA.textContent += $ + '\n'
+NowTime = () => {
+	const date = new Date()
+	return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+}
+const
+SysLog = ( ...$ ) => Sys( NowTime(), ...$ )
+const
+IDLog = ( id, ...$ ) => Sys( `${NowTime()} ${id}`, ...$ )
 
 var
-mode = 'select'
+mode = 'SELECT'
 
 const
 Select = ( $, _ ) => (
@@ -439,23 +466,23 @@ Select = ( $, _ ) => (
 ,	MODE_SELECT		.style.borderColor = 'black'
 ,	MODE_FILE		.style.borderColor = 'black'
 ,	MODE_EXEC		.style.borderColor = 'black'
-,	MODE_SPAW		.style.borderColor = 'black'
-,	MODE_PROG		.style.borderColor = 'black'
+,	MODE_SPAWN		.style.borderColor = 'black'
+,	MODE_PROGRAM	.style.borderColor = 'black'
 ,	MODE_STD		.style.borderColor = 'black'
 ,	MODE_ARG		.style.borderColor = 'black'
 ,	MODE_IMP		.style.borderColor = 'black'
-,	MODE_COMM		.style.borderColor = 'black'
+,	MODE_COMMENT	.style.borderColor = 'black'
 ,	_.style.borderColor = 'red'
 )
-MODE_SELECT		.onclick = ev => Select( 'select'	, MODE_SELECT	)
-MODE_FILE		.onclick = ev => Select( 'file'		, MODE_FILE		)
-MODE_EXEC		.onclick = ev => Select( 'exec'		, MODE_EXEC		)
-MODE_SPAW		.onclick = ev => Select( 'spaw'		, MODE_SPAW		)
-MODE_PROG		.onclick = ev => Select( 'prog'		, MODE_PROG		)
-MODE_STD		.onclick = ev => Select( 'std'		, MODE_STD		)
-MODE_ARG		.onclick = ev => Select( 'arg'		, MODE_ARG		)
-MODE_IMP		.onclick = ev => Select( 'imp'		, MODE_IMP		)
-MODE_COMM		.onclick = ev => Select( 'comm'		, MODE_COMM		)
+MODE_SELECT		.onclick = ev => Select( 'SELECT'	, MODE_SELECT	)
+MODE_FILE		.onclick = ev => Select( 'FILE'		, MODE_FILE		)
+MODE_EXEC		.onclick = ev => Select( 'EXEC'		, MODE_EXEC		)
+MODE_SPAWN		.onclick = ev => Select( 'SPAWN'	, MODE_SPAWN	)
+MODE_PROGRAM	.onclick = ev => Select( 'PROGRAM'	, MODE_PROGRAM	)
+MODE_STD		.onclick = ev => Select( 'STD'		, MODE_STD		)
+MODE_ARG		.onclick = ev => Select( 'ARG'		, MODE_ARG		)
+MODE_IMP		.onclick = ev => Select( 'IMP'		, MODE_IMP		)
+MODE_COMMENT	.onclick = ev => Select( 'COMMENT'	, MODE_COMMENT	)
 
 MODE_SELECT.dispatchEvent( new MouseEvent( 'click' ) )
 
@@ -525,25 +552,25 @@ CONTROL_C.onmousedown = md => {
 		)
 	)
 	const
-	ProcGeneric = ( $, pathProc ) => Generic(
+	PCGeneric = ( $, pathProc ) => Generic(
 		mm => c2d.stroke( pathProc( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
 	,	mu => (
-			PROC_TYPE.textContent = $
-		,	PROC.value = ''
-		,	DIALOG_PROC_OK.onclick = () => {
-				DIALOG_PROC.close()
-				const e = [ new Date().getTime(), $, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROC.value ]
+			PC_TYPE.textContent = $
+		,	PC.value = ''
+		,	DIALOG_PC_OK.onclick = () => {
+				DIALOG_PC.close()
+				const e = [ new Date().getTime(), $, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PC.value ]
 				Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 			}
-		,	DIALOG_PROC_CANCEL.onclick = () => DIALOG_PROC.close()
-		,	DIALOG_PROC.onclose = ClearControls
-		,	DIALOG_PROC.showModal()
+		,	DIALOG_PC_CANCEL.onclick = () => DIALOG_PC.close()
+		,	DIALOG_PC.onclose = ClearControls
+		,	DIALOG_PC.showModal()
 		)
 	)
 	const
 	RelationGeneric = $ => {
 		const s = elements.find( e => c2d.isPointInPath( ElementPath( e ), md.offsetX, md.offsetY ) )
-		s && s[ 1 ] !== 'COMM' && Generic(
+		s && s[ 1 ] !== 'COMMENT' && Generic(
 			mm => (
 				c2d.beginPath()
 			,	c2d.moveTo( md.offsetX, md.offsetY )
@@ -556,7 +583,7 @@ CONTROL_C.onmousedown = md => {
 				const d = elements.find( e => c2d.isPointInPath( ElementPath( e ), mu.offsetX, mu.offsetY ) )
 				if (
 					d
-				&&	d[ 1 ] !== 'COMM'
+				&&	d[ 1 ] !== 'COMMENT'
 				&&	s !== d
 				&&	(	s[ 1 ] === 'FILE' && d[ 1 ] !== 'FILE' 
 					||	s[ 1 ] !== 'FILE' && d[ 1 ] === 'FILE'
@@ -570,7 +597,7 @@ CONTROL_C.onmousedown = md => {
 	}
 
 	switch ( mode ) {
-	case 'select'	:
+	case 'SELECT'	:
 		{	selection.some( e => HitRect( e[ 2 ], [ md.offsetX, md.offsetY ] ) ) || (
 				selection = elements.filter( e => HitRect( e[ 2 ], [ md.offsetX, md.offsetY ] ) )
 			,	DrawElements()
@@ -639,7 +666,7 @@ CONTROL_C.onmousedown = md => {
 			}
 		}
 		break
-	case 'file'	:
+	case 'FILE'	:
 		Generic(
 			mm => c2d.stroke( FilePath( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
 		,	mu => ( DIALOG_TYPE_NEW.checked ? window.invokeSaveDialog : window.invokeOpenDialog )( PATH_TYPE_ABSOLUTE.checked ).then(
@@ -655,39 +682,39 @@ CONTROL_C.onmousedown = md => {
 			)
 		)
 		break
-	case 'std'		:
+	case 'STD'		:
 		RelationGeneric( 'STD' )
 		break
-	case 'arg'		:
+	case 'ARG'		:
 		RelationGeneric( 'ARG' )
 		break
-	case 'imp'		:
+	case 'IMP'		:
 		RelationGeneric( 'IMP' )
 		break
-	case 'comm'		:
-		ProcGeneric( 'COMM', CommPath )
+	case 'COMMENT'	:
+		PCGeneric( 'COMMENT', CommentPath )
 		break
-	case 'exec'		:
-		ProcGeneric( 'EXEC', ProcPath )
+	case 'EXEC'		:
+		PCGeneric( 'EXEC', ProcPath )
 		break
-	case 'spaw'		:
-		ProcGeneric( 'SPAW', ProcPath )
+	case 'SPAWN'	:
+		PCGeneric( 'SPAWN', ProcPath )
 		break
-	default			:
+	case 'PROGRAM'		:
 		Generic(
 			mm => c2d.stroke( ProcPath( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
 		,	mu => (
 				RemoveChildren( EXTENSION )
 			,	Object.keys( ExtensionDict ).forEach( $ => EXTENSION.appendChild( OptionElement( $ ) ) )
-			,	PROG.value = ''
-			,	DIALOG_PROG_OK.onclick = () => {
-					DIALOG_PROG.close()
-					const e = [ new Date().getTime(), EXTENSION.value, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROG.value ]
+			,	PROGRAM.value = ''
+			,	DIALOG_PROGRAM_OK.onclick = () => {
+					DIALOG_PROGRAM.close()
+					const e = [ new Date().getTime(), EXTENSION.value, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROGRAM.value ]
 					Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 				}
-			,	DIALOG_PROG_CANCEL.onclick = () => DIALOG_PROG.close()
-			,	DIALOG_PROG.onclose = ClearControls
-			,	DIALOG_PROG.showModal()
+			,	DIALOG_PROGRAM_CANCEL.onclick = () => DIALOG_PROGRAM.close()
+			,	DIALOG_PROGRAM.onclose = ClearControls
+			,	DIALOG_PROGRAM.showModal()
 			)
 		)
 		break
@@ -706,7 +733,7 @@ CONTROL_C.oncontextmenu = ev => {
 	const e = elements.find( e => c2d.isPointInPath( ElementPath( e ), ev.offsetX, ev.offsetY ) )
 	if ( e ) {
 		(	{	FILE	: window.sendFileCM
-			,	COMM	: window.sendCommCM
+			,	COMMENT	: window.sendCommentCM
 			}[ e[ 1 ] ] ?? window.sendProcCM
 		)( e[ 0 ] )
 		return
@@ -718,6 +745,20 @@ CONTROL_C.oncontextmenu = ev => {
 	}
 	window.sendCM()
 }
+
+CONTROL_C.onkeydown = ev => (
+	(	{	s: () => Select( 'SELECT'	, MODE_SELECT	)
+		,	f: () => Select( 'FILE'		, MODE_FILE		)
+		,	e: () => Select( 'EXEC'		, MODE_EXEC		)
+		,	p: () => Select( 'SPAWN'	, MODE_SPAWN	)
+		,	g: () => Select( 'PROGRAM'	, MODE_PROGRAM	)
+		,	d: () => Select( 'STD'		, MODE_STD		)
+		,	a: () => Select( 'ARG'		, MODE_ARG		)
+		,	h: () => Select( 'IMP'		, MODE_IMP		)
+		,	c: () => Select( 'COMMENT'	, MODE_COMMENT	)
+		}
+	)[ ev.key ] ?? ( () => {} )
+)()
 
 const
 CopyElements = $ => window.sendClipboard(
@@ -779,89 +820,109 @@ DeleteRelation = $ => {
 //	RUN & MAKE
 
 const
-Run = async id => {
-	const e = elements.find( e => e[ 0 ] === id )
+Run = ( id, cb = () => {} ) => {
+
+	const
+	CleanUp = () => (
+		ClearControls()
+	,	DrawElements()
+	,	cb()
+	)
+
+	const e = Element( id )
+	ClearControls()
+	c2d.fill( ElementPath( e ) )
 	switch ( e[ 1 ] ) {
 	case 'EXEC':
-		Log( ExecString( e ) )
-		await window.invokeExec( ExecString( e ) ).then(
+		IDLog( id, ExecString( e ) )
+		window.invokeExec( ExecString( e ) ).then(
 			$ => (
-				OUT_TA.textContent += $.stdout
-			,	ERR_TA.textContent += $.stderr
+				Out( $.stdout )
+			,	Err( $.stderr )
+			,	CleanUp()
 			)
-		).catch( Log )
+		)
 		break
-	case 'SPAW':
-		LOG_TA.textContent += SpawString( e ) + '\n'
+	case 'SPAWN':
+		IDLog( id, SpawnString( e ) )
 		{	const e3 = e[ 3 ].split( ' ' )
-			e3.length && FileGeneric(
-				e
-			,	async ( imps, args, stdI, stdO, stdE ) => (
-					await window.invokeSpawn(
-						e3[ 0 ]
-					,	e3.splice( 1 ).concat( args )
-					,	stdI
-					,	stdO
-					,	stdE
-					).catch( Log )
-				,	DrawElements()
+			e3.length
+			?	FileGeneric(
+					e
+				,	( imps, args, stdI, stdO, stdE ) => (
+						window.invokeSpawn(
+							e3[ 0 ]
+						,	e3.splice( 1 ).concat( args )
+						,	stdI
+						,	stdO
+						,	stdE
+						).then( $ => CleanUp() )
+					)
 				)
-			)
+			:	CleanUp()
 		}
 		break
 	default:
-		Log( ProgString( e ) )
+		IDLog( id, ProgString( e ) )
 		FileGeneric(
 			e
-		,	async ( imps, args, stdI, stdO, stdE ) => {
+		,	( imps, args, stdI, stdO, stdE ) => {
 				const _ = `.${e[ 0 ]}.${e[ 1 ]}`
-				await window.invokeWrite( _, e[ 3 ] )
-				await window.invokeSpawn(
-					ExtensionDict[ e[ 1 ] ]
-				,	[ _ ]
-				,	stdI
-				,	stdO
-				,	stdE
-				).catch( Log )
-				await window.invokeUnlink( _ )
-				DrawElements()
+				window.invokeWrite( _, e[ 3 ] ).then(
+					$ => window.invokeSpawn(
+						ExtensionDict[ e[ 1 ] ]
+					,	[ _ ]
+					,	stdI
+					,	stdO
+					,	stdE
+					).then(
+						$ => window.invokeUnlink( _ ).then(
+							$ => CleanUp()
+						)
+					)
+				)
 			}
 		)
+		break
 	}
-	DrawElements()
 }
+const
+ChainRun = $ => $.length && Run( $[ 0 ], () => ChainRun( $.splice( 1 ) ) )
+
 const
 Uppers = $ => relations.filter( r => r[ 2 ] === $ ).map( $ => $[ 1 ] )
 
 const
-ChainRun = proc => {
-	const upperFiles = Uppers( proc )
-	const upperProcs = upperFiles.map( file => Uppers( file ) ).flat()
-	upperProcs.forEach( proc => ChainRun( proc ) )
-	Run( proc )
+ProcChain = proc => [
+	...Uppers( proc ).flatMap( file => Uppers( file ) ).flatMap( proc => ProcChain( proc ) )
+,	proc
+]
+
+const
+ProcString = $ => {
+	const e = Element( $ )
+	switch ( e[ 1 ] ) {
+	case 'EXEC'	: return ExecString( e )
+	case 'SPAWN': return SpawnString( e )
+	default:
+		return `cat > .${e[ 0 ]}.${e[ 1 ]} << EOD
+${e[ 3 ]}
+EOD
+${ProgString( e )}
+`
+	}
 }
 
-
-/*
-局面
-EXEC
-	通常の使用
-	Supp をそのままコマンドラインに渡す
-	シェルを介しているのでパイプとかも扱える
-SPAWN
-	長い時間がかかるのでモニタしたい
-	でもつながっているSTDはつなぐ
-	Supp をそのままコマンドラインに渡す
-prog
-	Supp をファイルにして対応するインタープリタに食わせる
-	Spawn で呼び出す。
-*/
+const
+ProcScript = file => Uppers( file ).flatMap( proc => ProcChain( proc ) ).reduce(
+	( $, _ ) => $ + ProcString( _ )
+,	''
+)
 
 window.onMenu(
 	( _, menu, $ ) => {
 		console.log( 'onMenu', menu, $ )
-		;
-		(	{	undo			: Undo
+		;(	{	undo			: Undo
 			,	redo			: Redo
 			,	paste			: Paste
 			,	copy			: () => CopyElements	( selection.map( e => e[ 0 ] ) )
@@ -873,9 +934,11 @@ window.onMenu(
 			,	elementEdit		: () => EditElement		( elements.find( e => e[ 0 ] === $ ) )
 			,	relationDelete	: () => DeleteRelation	( $ )
 			,	procRun			: () => Run( $ )
+			,	procRunAll		: () => ChainRun( ProcChain( $ ) )
 			,	selectAll		: () => ( selection = elements.slice(), DrawElements() )
-			,	fileUnlink		: () => window.invokeUnlink( elements.find( e => e[ 0 ] === $ )[ 3 ] ).catch( $ => Log( $ ), DrawElements() )
-			,	fileMake		: () => Uppers( $ ).forEach( proc => ChainRun( proc ) )
+			,	fileUnlink		: () => window.invokeUnlink( elements.find( e => e[ 0 ] === $ )[ 3 ] ).then( DrawElements ).catch( $ => SysLog( $ ) )
+			,	fileMake		: () => ChainRun( Uppers( $ ).flatMap( proc => ProcChain( proc ) ) )
+			,	fileScript		: () => Sys( ProcScript( $ ) )
 			}[ menu ] ?? ( () => {} )
 		)()
 	}
