@@ -81,15 +81,6 @@ app.whenReady().then(
 		,	() => isMac || app.quit()
 		)
 
-console.log(
-	'argv'
-,	argv.slice(
-		isWin
-		?	argv[ 0 ].split( '\\' ).pop()	== 'electron.exe'	? 2 : 1
-		:	argv[ 0 ].split( '/' ).pop()	== 'Electron'		? 2 : 1
-	)
-)
-
 		const
 		mBar = Menu.getApplicationMenu()
 
@@ -245,7 +236,7 @@ ipcMain.on(
 )
 
 ipcMain.on(
-	'commCM'
+	'commentCM'
 ,	( ev, $ ) => {	//	Element
 		const cm = new Menu()
 		cm.append( new MenuItem( { label: 'Cut'				, click: () => SendMenu( 'elementCut'		, $ ) } ) )
@@ -309,14 +300,11 @@ ipcMain.handle(
 		chdir( dirname( ev.sender.browserWindowOptions.webPreferences.file ) )
 	,	await new Promise(
 			( s, j ) => {
-console.log( '>exec:', command )
 				exec(
 					command
-				,	( error, stdout, stderr ) => (
-						error 
-						?	( console.log( '*exec:', command ), j( error ) )
-						:	( console.log( '>exec:', command ), s( { stdout, stderr } ) )
-					)
+				,	( error, stdout, stderr ) => error 
+					?	j( error )
+					:	s( { stdout, stderr } )
 				)
 			}
 		)
@@ -329,7 +317,6 @@ ipcMain.handle(
 		chdir( dirname( ev.sender.browserWindowOptions.webPreferences.file ) )
 	,	await new Promise(
 			( s, j ) => {
-console.log( '>spawn:', command )
 				const $ = spawn( command, args )
 				stdin && createReadStream( stdin ).pipe( $.stdin )
 				stdout
@@ -338,8 +325,8 @@ console.log( '>spawn:', command )
 				stderr
 				?	$.stderr.pipe( createWriteStream( stderr ) )
 				:	$.stderr.on( 'data', $ => Send( 'stderr', $ ) )
-				$.on( 'close', ( code, signal ) => ( console.log( '<spawn:', command ), s( code, signal ) ) )
-				$.on( 'error', $ => ( console.log( '*spawn:', command ), j( $ ) ) )
+				$.on( 'close', ( code, signal ) => s( code, signal ) )
+				$.on( 'error', $ => j( $ ) )
 			}
 		)
 	)

@@ -59,7 +59,7 @@ var
 elements	= []	//	[ id: S, type: S, rect:[ N, N, N, N ], supp: ANY ]	type: proc, EXEC, SPAWN, FILE, COMMENT
 
 const
-Adjust	= () => {
+Validate	= () => {
 	const IDs = elements.map( $ => $[ 0 ] )
 	const error = relations.filter( r => !( IDs.includes( r[ 1 ] ) && IDs.includes( r [ 2 ] ) ) )
 	error.length && console.error( 'DANGLING RELATIONS:', error )
@@ -71,7 +71,7 @@ window.onData(
 	( _, $ ) => (
 		elements	= $.elements ?? []
 	,	relations	= $.relations ?? []
-	,	Adjust()
+	,	Validate()
 	,	DrawElements()
 	)
 )
@@ -282,7 +282,7 @@ DrawElements = moving => (
 
 	e2d.clearRect( 0, 0, ELEMENT_C.width, ELEMENT_C.height )
 
-,Adjust()
+,Validate()
 
 ,	relations.forEach(
 		r => {
@@ -522,6 +522,13 @@ EditElement = e => (
 ,	DIALOG_GENERIC.showModal()
 )
 
+const
+NewID = () => {
+	let _ = 0
+	while ( Element( _ ) ) _++
+	return _
+}
+
 CONTROL_C.onmousedown = md => {
 
 	if ( md.button ) return
@@ -538,14 +545,11 @@ CONTROL_C.onmousedown = md => {
 			ClearControls()
 		,	dragProc( mm )
 		)
-	,	CONTROL_C.onmouseleave = () => (
+	,	CONTROL_C.onmouseleave = CONTROL_C.onmouseup = mu => (
 			CONTROL_C.onmousemove	= null
 		,	CONTROL_C.onmouseup		= null
 		,	CONTROL_C.onmouseleave	= null
 		,	ClearControls()
-		)
-	,	CONTROL_C.onmouseup = mu => (
-			CONTROL_C.onmouseleave()
 		,	mu.offsetX - md.offsetX && mu.offsetY - md.offsetY
 			?	doProc( mu )
 			:	cancelProc && cancelProc()
@@ -559,7 +563,7 @@ CONTROL_C.onmousedown = md => {
 		,	PC.value = ''
 		,	DIALOG_PC_OK.onclick = () => {
 				DIALOG_PC.close()
-				const e = [ new Date().getTime(), $, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PC.value ]
+				const e = [ NewID(), $, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PC.value ]
 				Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 			}
 		,	DIALOG_PC_CANCEL.onclick = () => DIALOG_PC.close()
@@ -673,7 +677,7 @@ CONTROL_C.onmousedown = md => {
 				$ => (
 					$.forEach(
 						$ => {
-							const e = [ new Date().getTime(), 'FILE', NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), $ ]
+							const e = [ NewID(), 'FILE', NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), $ ]
 							Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 						}
 					)
@@ -709,7 +713,7 @@ CONTROL_C.onmousedown = md => {
 			,	PROGRAM.value = ''
 			,	DIALOG_PROGRAM_OK.onclick = () => {
 					DIALOG_PROGRAM.close()
-					const e = [ new Date().getTime(), EXTENSION.value, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROGRAM.value ]
+					const e = [ NewID(), EXTENSION.value, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROGRAM.value ]
 					Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 				}
 			,	DIALOG_PROGRAM_CANCEL.onclick = () => DIALOG_PROGRAM.close()
@@ -746,16 +750,17 @@ CONTROL_C.oncontextmenu = ev => {
 	window.sendCM()
 }
 
-CONTROL_C.onkeydown = ev => (
+document.onkeydown = ev => (
+console.log( ev.key, ev.keyCode ),
 	(	{	s: () => Select( 'SELECT'	, MODE_SELECT	)
 		,	f: () => Select( 'FILE'		, MODE_FILE		)
 		,	e: () => Select( 'EXEC'		, MODE_EXEC		)
 		,	p: () => Select( 'SPAWN'	, MODE_SPAWN	)
-		,	g: () => Select( 'PROGRAM'	, MODE_PROGRAM	)
+		,	r: () => Select( 'PROGRAM'	, MODE_PROGRAM	)
 		,	d: () => Select( 'STD'		, MODE_STD		)
-		,	a: () => Select( 'ARG'		, MODE_ARG		)
+		,	g: () => Select( 'ARG'		, MODE_ARG		)
 		,	h: () => Select( 'IMP'		, MODE_IMP		)
-		,	c: () => Select( 'COMMENT'	, MODE_COMMENT	)
+		,	m: () => Select( 'COMMENT'	, MODE_COMMENT	)
 		}
 	)[ ev.key ] ?? ( () => {} )
 )()
@@ -793,17 +798,33 @@ CutElements = $ => (
 const
 Paste = () => window.invokeClipboard().then(
 	$ => {
-		const cb = JSON.parse( $ ).JobFlower
-		if ( cb ) {
+		const toPaste = JSON.parse( $ ).JobFlower
+		if ( toPaste ) {
 			const oldEs = [ ...elements ]
 			const oldRs = [ ...relations ]
+			const oldSelection = selection
 			Job(
-				() => (
-					elements.push( ...cb.elements )
-				,	relations.push( ...cb.relations )
-				,	Adjust()
+				() => {
+					const _ = {}
+					selection = []
+					toPaste.elements.forEach(
+						e => {
+							const newE = [ NewID(), e[ 1 ], MoveRect( e[ 2 ], [ 16, 16 ] ), e[ 3 ] ]
+							_[ e[ 0 ] ] = newE[ 0 ]
+							elements.push( newE )
+							selection.push( newE )
+						}
+					)
+					toPaste.relations.forEach(
+						r => relations.push( [ r[ 0 ], _[ r[ 1 ] ] ?? r[ 1 ], _[ r[ 2 ] ] ?? r[ 2 ] ] )
+					)
+					Validate()
+				}
+			,	() => (
+					elements = oldEs
+				,	relations = oldRs
+				,	selection = oldSelection
 				)
-			,	() => ( elements = oldEs, relations = oldRs )
 			)
 		}
 	}
