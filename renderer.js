@@ -1,4 +1,5 @@
-console.log( 'Platform:', window.platform() )
+const
+platform = window.platform()
 
 const
 Sub			= ( [ x, y ], [ X, Y ] ) => [ x - X, y - Y ]
@@ -750,49 +751,36 @@ CONTROL_C.oncontextmenu = ev => {
 	window.sendCM()
 }
 
-document.onkeydown = ev => (
-console.log( ev.key, ev.keyCode ),
-	(	{	s: () => Select( 'SELECT'	, MODE_SELECT	)
-		,	f: () => Select( 'FILE'		, MODE_FILE		)
-		,	e: () => Select( 'EXEC'		, MODE_EXEC		)
-		,	p: () => Select( 'SPAWN'	, MODE_SPAWN	)
-		,	r: () => Select( 'PROGRAM'	, MODE_PROGRAM	)
-		,	d: () => Select( 'STD'		, MODE_STD		)
-		,	g: () => Select( 'ARG'		, MODE_ARG		)
-		,	h: () => Select( 'IMP'		, MODE_IMP		)
-		,	m: () => Select( 'COMMENT'	, MODE_COMMENT	)
-		}
-	)[ ev.key ] ?? ( () => {} )
-)()
-
 const
-CopyElements = $ => window.sendClipboard(
-	JSON.stringify(
-		{	JobFlower:
-			{	elements	: elements.filter( e => $.includes( e[ 0 ] ) )
-			,	relations	: relations.filter( r => $.includes( r[ 1 ] ) || $.includes( r[ 2 ] ) )
+Copy = $ => {
+	const IDs = $.map( $ => $[ 0 ] )
+	window.sendClipboard(
+		JSON.stringify(
+			{	JobFlower:
+				{	elements	: $
+				,	relations	: relations.filter( r => IDs.includes( r[ 1 ] ) || IDs.includes( r[ 2 ] ) )
+				}
 			}
-		}
+		)
 	)
-)
-
+}
 const
-DeleteElements = $ => {
+Delete = $ => {
 	const oldEs = [ ...elements ]
 	const oldRs = [ ...relations ]
+	const IDs = $.map( $ => $[ 0 ] )
 	Job(
 		() => (
-			elements = elements.filter( e => !$.includes( e[ 0 ] ) )
-		,	relations = relations.filter( r => !$.includes( r[ 1 ] ) && !$.includes( r[ 2 ] ) )
+			elements = elements.filter( e => !$.includes( e ) )
+		,	relations = relations.filter( r => !IDs.includes( r[ 1 ] ) && !IDs.includes( r[ 2 ] ) )
 		)
 	,	() => ( elements = oldEs, relations = oldRs )
 	)
 }
-
 const
-CutElements = $ => (
-	CopyElements( $ )
-,	DeleteElements( $ )
+Cut = $ => (
+	Copy( $ )
+,	Delete( $ )
 )
 
 const
@@ -837,6 +825,30 @@ DeleteRelation = $ => {
 	,	() => relations = oldRs
 	)
 }
+
+
+const
+Bypass = ev => document.activeElement === CONTROL_C && ( platform === 'darwin' ? ev.metaKey : ev.ctrlKey )
+
+CONTROL_C.onkeydown = ev => (
+	(	{	s: () => Select( 'SELECT'	, MODE_SELECT	)
+		,	f: () => Select( 'FILE'		, MODE_FILE		)
+		,	e: () => Select( 'EXEC'		, MODE_EXEC		)
+		,	p: () => Select( 'SPAWN'	, MODE_SPAWN	)
+		,	r: () => Select( 'PROGRAM'	, MODE_PROGRAM	)
+		,	d: () => Select( 'STD'		, MODE_STD		)
+		,	g: () => Select( 'ARG'		, MODE_ARG		)
+		,	h: () => Select( 'IMP'		, MODE_IMP		)
+		,	m: () => Select( 'COMMENT'	, MODE_COMMENT	)
+		,	Backspace: () => Delete( selection )
+		,	x: () => Bypass( ev ) && Cut( selection )
+		,	c: () => Bypass( ev ) && Copy( selection )
+		,	v: () => Bypass( ev ) && Paste()
+		,	z: () => Bypass( ev ) && ( ev.shiftKey ? Redo() : Undo() )
+		,	a: () => Bypass( ev ) && ( selection = elements.slice() )
+		}
+	)[ ev.key ] ?? ( () => {} )
+)()
 
 //	RUN & MAKE
 
@@ -943,23 +955,23 @@ ProcScript = file => Uppers( file ).flatMap( proc => ProcChain( proc ) ).reduce(
 window.onMenu(
 	( _, menu, $ ) => {
 		console.log( 'onMenu', menu, $ )
-		;(	{	undo			: Undo
-			,	redo			: Redo
-			,	paste			: Paste
-			,	copy			: () => CopyElements	( selection.map( e => e[ 0 ] ) )
-			,	delete			: () => DeleteElements	( selection.map( e => e[ 0 ] ) )
-			,	cut				: () => CutElements		( selection.map( e => e[ 0 ] ) )
-			,	elementCopy		: () => CopyElements	( [ $ ] )
-			,	elementDelete	: () => DeleteElements	( [ $ ] )
-			,	elementCut		: () => CutElements		( [ $ ] )
-			,	elementEdit		: () => EditElement		( elements.find( e => e[ 0 ] === $ ) )
+		;(	{	elementCopy		: () => Copy			( [ Element( $ ) ] )
+			,	elementDelete	: () => Delete			( [ Element( $ ) ] )
+			,	elementCut		: () => Cut				( [ Element( $ ) ] )
+			,	elementEdit		: () => EditElement		( Element( $ ) )
 			,	relationDelete	: () => DeleteRelation	( $ )
-			,	procRun			: () => Run( $ )
-			,	procRunAll		: () => ChainRun( ProcChain( $ ) )
+			,	procRun			: () => Run				( $ )
+			,	procRunAll		: () => ChainRun		( ProcChain( $ ) )
 			,	selectAll		: () => ( selection = elements.slice(), DrawElements() )
 			,	fileUnlink		: () => window.invokeUnlink( elements.find( e => e[ 0 ] === $ )[ 3 ] ).then( DrawElements ).catch( $ => SysLog( $ ) )
 			,	fileMake		: () => ChainRun( Uppers( $ ).flatMap( proc => ProcChain( proc ) ) )
 			,	fileScript		: () => Sys( ProcScript( $ ) )
+		//	,	undo			: Undo
+		//	,	redo			: Redo
+		//	,	paste			: Paste
+		//	,	copy			: () => Copy			( selection )
+		//	,	delete			: () => Delete			( selection )
+		//	,	cut				: () => Cut				( selection )
 			}[ menu ] ?? ( () => {} )
 		)()
 	}

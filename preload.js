@@ -1,8 +1,13 @@
-const { contextBridge, ipcRenderer } = require( 'electron' )
+const { contextBridge, ipcRenderer, clipboard } = require( 'electron' )
 
 contextBridge.exposeInMainWorld(
 	'platform'
 ,	() => process.platform
+)
+
+contextBridge.exposeInMainWorld(
+	'clipboard'
+,	() => clipboard
 )
 
 //	MESSAGE BOX

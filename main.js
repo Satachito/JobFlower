@@ -116,29 +116,23 @@ app.whenReady().then(
 		)
 		fileMenu.insert( 4, new MenuItem( { type: 'separator' } ) )
 
-		mBar.insert(
-			isMac ? 3 : 2
-		,	new MenuItem(
-				{	label: 'Element'
-				,	submenu: [
-						{	label	: 'Undo'		,	click: () => SendMenu( 'undo'		) ,   accelerator : 'Alt+Z'			}
-					,	{	label	: 'Redo'		,	click: () => SendMenu( 'redo'		) ,   accelerator : 'Shift+Alt+Z'	}
-					,	{	type	: 'separator' }
-					,	{	label	: 'Cut'			,	click: () => SendMenu( 'cut'		) ,   accelerator : 'Alt+X'			}
-					,	{	label	: 'Copy'		,	click: () => SendMenu( 'copy'		) ,   accelerator : 'Alt+C'			}
-					,	{	label	: 'Paste'		,	click: () => SendMenu( 'paste'		) ,   accelerator : 'Alt+V'			}
-					,	{	label	: 'Delete'		,	click: () => SendMenu( 'delete'		) ,   accelerator : 'Delete'		}
-					,	{	label	: 'Select All'	,	click: () => SendMenu( 'selectAll'	) ,   accelerator : 'Alt+A'			}
-					]
-				}
-			)
-		)
-//	アクセラレータ
-//	Command キーは使わない。代わりにCommandOrControl
-//	Option は使わない、これは macOS だけ、代わりに Alt を使う。Alt は macOS では Option にマップされている
-//	文字の Cut, Copy, Paste などを行う機能は macOS では CMD, Windows では Ctrl が使われている
-//	特にWindows ではハードコードされているのでもし Ctrl+.. の動きを変えたい場合は onkey... に手を入れなくてはならない
-//	Super == Meta は使わない。Windows では特殊な意味を持っている。
+//		mBar.insert(
+//			isMac ? 3 : 2
+//		,	new MenuItem(
+//				{	label: 'Element'
+//				,	submenu: [
+//						{	label	: 'Undo'		,	click: () => SendMenu( 'undo'		) ,   accelerator : 'Alt+Z'			}
+//					,	{	label	: 'Redo'		,	click: () => SendMenu( 'redo'		) ,   accelerator : 'Shift+Alt+Z'	}
+//					,	{	type	: 'separator' }
+//					,	{	label	: 'Cut'			,	click: () => SendMenu( 'cut'		) ,   accelerator : 'Alt+X'			}
+//					,	{	label	: 'Copy'		,	click: () => SendMenu( 'copy'		) ,   accelerator : 'Alt+C'			}
+//					,	{	label	: 'Paste'		,	click: () => SendMenu( 'paste'		) ,   accelerator : 'Alt+V'			}
+//					,	{	label	: 'Delete'		,	click: () => SendMenu( 'delete'		) ,   accelerator : 'Delete'		}
+//					,	{	label	: 'Select All'	,	click: () => SendMenu( 'selectAll'	) ,   accelerator : 'Alt+A'			}
+//					]
+//				}
+//			)
+//		)
 
 		Menu.setApplicationMenu( mBar )
 
