@@ -445,9 +445,9 @@ Sys = ( ...$ ) => (
 CLEAR_OUT_TA	.onclick = () => OUT_TA.textContent = ''
 CLEAR_ERR_TA	.onclick = () => ERR_TA.textContent = ''
 CLEAR_SYS_TA	.onclick = () => SYS_TA.textContent = ''
-COPY_OUT_TA		.onclick = () => window.sendClipboard( OUT_TA.textContent )
-COPY_ERR_TA		.onclick = () => window.sendClipboard( ERR_TA.textContent )
-COPY_SYS_TA		.onclick = () => window.sendClipboard( SYS_TA.textContent )
+COPY_OUT_TA		.onclick = () => window.clipboard().writeText( OUT_TA.textContent )
+COPY_ERR_TA		.onclick = () => window.clipboard().writeText( ERR_TA.textContent )
+COPY_SYS_TA		.onclick = () => window.clipboard().writeText( SYS_TA.textContent )
 const
 NowTime = () => {
 	const date = new Date()
@@ -754,7 +754,7 @@ CONTROL_C.oncontextmenu = ev => {
 const
 Copy = $ => {
 	const IDs = $.map( $ => $[ 0 ] )
-	window.sendClipboard(
+	window.clipboard().writeText(
 		JSON.stringify(
 			{	JobFlower:
 				{	elements	: $
@@ -784,39 +784,37 @@ Cut = $ => (
 )
 
 const
-Paste = () => window.invokeClipboard().then(
-	$ => {
-		const toPaste = JSON.parse( $ ).JobFlower
-		if ( toPaste ) {
-			const oldEs = [ ...elements ]
-			const oldRs = [ ...relations ]
-			const oldSelection = selection
-			Job(
-				() => {
-					const _ = {}
-					selection = []
-					toPaste.elements.forEach(
-						e => {
-							const newE = [ NewID(), e[ 1 ], MoveRect( e[ 2 ], [ 16, 16 ] ), e[ 3 ] ]
-							_[ e[ 0 ] ] = newE[ 0 ]
-							elements.push( newE )
-							selection.push( newE )
-						}
-					)
-					toPaste.relations.forEach(
-						r => relations.push( [ r[ 0 ], _[ r[ 1 ] ] ?? r[ 1 ], _[ r[ 2 ] ] ?? r[ 2 ] ] )
-					)
-					Validate()
-				}
-			,	() => (
-					elements = oldEs
-				,	relations = oldRs
-				,	selection = oldSelection
+Paste = () => {
+	const toPaste = JSON.parse( window.clipboard().readText() ).JobFlower
+	if ( toPaste ) {
+		const oldEs = [ ...elements ]
+		const oldRs = [ ...relations ]
+		const oldSelection = selection
+		Job(
+			() => {
+				const _ = {}
+				selection = []
+				toPaste.elements.forEach(
+					e => {
+						const newE = [ NewID(), e[ 1 ], MoveRect( e[ 2 ], [ 16, 16 ] ), e[ 3 ] ]
+						_[ e[ 0 ] ] = newE[ 0 ]
+						elements.push( newE )
+						selection.push( newE )
+					}
 				)
+				toPaste.relations.forEach(
+					r => relations.push( [ r[ 0 ], _[ r[ 1 ] ] ?? r[ 1 ], _[ r[ 2 ] ] ?? r[ 2 ] ] )
+				)
+				Validate()
+			}
+		,	() => (
+				elements = oldEs
+			,	relations = oldRs
+			,	selection = oldSelection
 			)
-		}
+		)
 	}
-)
+}
 const
 DeleteRelation = $ => {
 	const oldRs = [ ...relations ]
@@ -962,16 +960,16 @@ window.onMenu(
 			,	relationDelete	: () => DeleteRelation	( $ )
 			,	procRun			: () => Run				( $ )
 			,	procRunAll		: () => ChainRun		( ProcChain( $ ) )
-			,	selectAll		: () => ( selection = elements.slice(), DrawElements() )
 			,	fileUnlink		: () => window.invokeUnlink( elements.find( e => e[ 0 ] === $ )[ 3 ] ).then( DrawElements ).catch( $ => SysLog( $ ) )
 			,	fileMake		: () => ChainRun( Uppers( $ ).flatMap( proc => ProcChain( proc ) ) )
 			,	fileScript		: () => Sys( ProcScript( $ ) )
-		//	,	undo			: Undo
-		//	,	redo			: Redo
-		//	,	paste			: Paste
-		//	,	copy			: () => Copy			( selection )
-		//	,	delete			: () => Delete			( selection )
-		//	,	cut				: () => Cut				( selection )
+			,	undo			: Undo
+			,	redo			: Redo
+			,	cut				: () => Cut				( selection )
+			,	copy			: () => Copy			( selection )
+			,	paste			: Paste
+			,	delete			: () => Delete			( selection )
+			,	selectAll		: () => ( selection = elements.slice(), DrawElements() )
 			}[ menu ] ?? ( () => {} )
 		)()
 	}

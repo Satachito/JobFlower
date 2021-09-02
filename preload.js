@@ -31,18 +31,6 @@ contextBridge.exposeInMainWorld(
 ,	( ...$ ) => ipcRenderer.on( 'menu', ...$ )
 )
 
-//	CLIPBOARD
-
-contextBridge.exposeInMainWorld(
-	'sendClipboard'
-,	( ...$ ) => ipcRenderer.send( 'clipboard', ...$ )
-)
-
-contextBridge.exposeInMainWorld(
-	'invokeClipboard'
-,	( ...$ ) => ipcRenderer.invoke( 'clipboard', ...$ )
-)
-
 //	APPLICATION GENERIC
 
 contextBridge.exposeInMainWorld(

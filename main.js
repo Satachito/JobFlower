@@ -1,5 +1,5 @@
 const
-{ app, BrowserWindow, Menu, MenuItem, ipcMain, dialog, clipboard } = require( 'electron' )
+{ app, BrowserWindow, Menu, MenuItem, ipcMain, dialog } = require( 'electron' )
 
 const
 { readFile, writeFile, createReadStream, createWriteStream, stat, unlink } = require( 'fs' )
@@ -116,38 +116,10 @@ app.whenReady().then(
 		)
 		fileMenu.insert( 4, new MenuItem( { type: 'separator' } ) )
 
-//		mBar.insert(
-//			isMac ? 3 : 2
-//		,	new MenuItem(
-//				{	label: 'Element'
-//				,	submenu: [
-//						{	label	: 'Undo'		,	click: () => SendMenu( 'undo'		) ,   accelerator : 'Alt+Z'			}
-//					,	{	label	: 'Redo'		,	click: () => SendMenu( 'redo'		) ,   accelerator : 'Shift+Alt+Z'	}
-//					,	{	type	: 'separator' }
-//					,	{	label	: 'Cut'			,	click: () => SendMenu( 'cut'		) ,   accelerator : 'Alt+X'			}
-//					,	{	label	: 'Copy'		,	click: () => SendMenu( 'copy'		) ,   accelerator : 'Alt+C'			}
-//					,	{	label	: 'Paste'		,	click: () => SendMenu( 'paste'		) ,   accelerator : 'Alt+V'			}
-//					,	{	label	: 'Delete'		,	click: () => SendMenu( 'delete'		) ,   accelerator : 'Delete'		}
-//					,	{	label	: 'Select All'	,	click: () => SendMenu( 'selectAll'	) ,   accelerator : 'Alt+A'			}
-//					]
-//				}
-//			)
-//		)
-
 		Menu.setApplicationMenu( mBar )
 
 		OpenDialog()
 	}
-)
-
-ipcMain.on(
-	'clipboard'
-,	( ev, $ ) => clipboard.writeText( $ )
-)
-
-ipcMain.handle(
-	'clipboard'
-,	ev => clipboard.readText()
 )
 
 ipcMain.on(
@@ -253,13 +225,16 @@ ipcMain.on(
 
 ipcMain.on(
 	'CM'
-,	( ev, $ ) => {	//	Element
+,	ev => {
 		const cm = new Menu()
-		cm.append( new MenuItem( { label: 'Undo'			, click: () => SendMenu( 'undo'				, $ ) } ) )
-		cm.append( new MenuItem( { label: 'Redo'			, click: () => SendMenu( 'redo'				, $ ) } ) )
+		cm.append( new MenuItem( { label: 'Undo'			, click: () => SendMenu( 'undo'			) } ) )
+		cm.append( new MenuItem( { label: 'Redo'			, click: () => SendMenu( 'redo'			) } ) )
 		cm.append( new MenuItem( { type	: 'separator' } ) )
-		cm.append( new MenuItem( { label: 'Paste'			, click: () => SendMenu( 'paste'			, $ ) } ) )
-		cm.append( new MenuItem( { label: 'Select All'		, click: () => SendMenu( 'selectAll'		, $ ) } ) )
+		cm.append( new MenuItem( { label: 'Cut'				, click: () => SendMenu( 'cut'			) } ) )
+		cm.append( new MenuItem( { label: 'Copy'			, click: () => SendMenu( 'copy'			) } ) )
+		cm.append( new MenuItem( { label: 'Paste'			, click: () => SendMenu( 'paste'		) } ) )
+		cm.append( new MenuItem( { label: 'Delete'			, click: () => SendMenu( 'delete'		) } ) )
+		cm.append( new MenuItem( { label: 'Select All'		, click: () => SendMenu( 'selectAll'	) } ) )
 		cm.popup()
 	}
 )
