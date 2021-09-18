@@ -4,10 +4,8 @@
 
 ## TODO
 
-{"JobFlower":{"elements":[[1,"EXEC",[85,137,276,214],"echo JobFlower"]],"relations":[]}}
-
-
-
+Windows との互換を取るため、初期は New 
+ファイルをクリックしてアプリを起動に対応
 
 
 ## Tutorial
@@ -16,7 +14,7 @@
 
 #### On Launch
 
-The save dialog is displayed at startup. Enter your first `.job` file name, such as `Basics.job`, and press `OK`.
+The new file dialog is displayed at startup. Enter your first `.job` file name, such as `Basics.job`, and press `OK`.
 
 The specified file will be automatically created and an editor window opens.
 

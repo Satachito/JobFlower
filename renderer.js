@@ -360,30 +360,40 @@ DrawElements = moving => (
 
 //	Bottom
 			const
-			DrawBottom = $ => (
+			DrawBottomLeft = $ => (
 				e2d.font='12px monospace'
-			,	e2d.textAlign='start'
+			,	e2d.textAlign='left'
 			,	e2d.fillText( $, x, Y - 4, X - x )
 			)
+			const
+			DrawBottomRight = $ => (
+				e2d.font='12px monospace'
+			,	e2d.textAlign='right'
+			,	e2d.fillText( $, X, Y - 4, X - x )
+			)
+
 
 			switch ( e[ 1 ] ) {	//	type
 			case 'FILE':
 				moving
-				?	DrawBottom( '---- dragging ----' )
+				?	DrawBottomLeft( '---- dragging ----' )
 				:	await window.invokeStat( e[ 3 ] ).then(
-						$ => DrawBottom( '' + $.size + ':' + new Date( $.mtimeMs ).toLocaleString() )
-					).catch( $ => DrawBottom( '----' ) )
+						$ => (
+							DrawBottomLeft( '' + $.size )
+						,	DrawBottomRight( new Date( $.mtimeMs ).toLocaleString() )
+						)
+					).catch( $ => DrawBottomLeft( '----' ) )
 				break
 			case 'COMMENT':
 				break
 			case 'EXEC':
-				DrawBottom( ExecString( e ).split( '\n' )[ 0 ] )
+				DrawBottomLeft( ExecString( e ).split( '\n' )[ 0 ] )
 				break
 			case 'SPAWN':
-				DrawBottom( SpawnString( e ) )
+				DrawBottomLeft( SpawnString( e ) )
 				break
 			default:
-				DrawBottom( ProgString( e ) )
+				DrawBottomLeft( ProgString( e ) )
 				break
 			}
 

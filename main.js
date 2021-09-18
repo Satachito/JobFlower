@@ -137,7 +137,7 @@ ipcMain.handle(
 ,	async ( ev, $ ) => await (
 		promisify( writeFile )( 
 			ev.sender.browserWindowOptions.webPreferences.file
-		,	JSON.stringify( $ )
+		,	JSON.stringify( $, null, '\t' )
 		)
 	)
 )
