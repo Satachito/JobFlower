@@ -2,7 +2,10 @@ const
 platform = window.platform()
 
 const
-Sub			= ( [ x, y ], [ X, Y ] ) => [ x - X, y - Y ]
+Sub			= ( p, q ) => p.map( ( $, _ ) => $ - q[ _ ] )
+
+const
+Equal		= ( p, q ) => p.every( ( $, _ ) => $ === q[ _ ] )
 
 const
 Center		= ( [ x, y, X, Y ] ) => [ ( x + X ) / 2, ( y + Y ) / 2 ]
@@ -540,41 +543,53 @@ NewID = () => {
 	return _
 }
 
-CONTROL_C.onmousedown = md => {
+const
+ControlXY = ev => {
+	const o = CONTROL_C.getBoundingClientRect()
+	return [ ev.clientX - o.left, ev.clientY - o.top ]
+}
+
+document.onmousedown = md => {
 
 	if ( md.button ) return
 
+	const
+	mdXY = ControlXY( md )
+
 	if ( md.detail > 1 ) {
-		const e = elements.find( e => HitRect( e[ 2 ], [ md.offsetX, md.offsetY ] ) )
+		const e = elements.find( e => HitRect( e[ 2 ], mdXY ) )
 		e && EditElement( e )
 		return
 	}
 
 	const
 	Generic = ( dragProc, doProc, cancelProc ) => (
-		CONTROL_C.onmousemove = mm => (
+		document.onmousemove = mm => (
 			ClearControls()
 		,	dragProc( mm )
 		)
-	,	CONTROL_C.onmouseleave = CONTROL_C.onmouseup = mu => (
-			CONTROL_C.onmousemove	= null
-		,	CONTROL_C.onmouseup		= null
-		,	CONTROL_C.onmouseleave	= null
+	,	document.onmouseup = mu => (
+			document.onmousemove	= null
+		,	document.onmouseup		= null
 		,	ClearControls()
-		,	mu.offsetX - md.offsetX && mu.offsetY - md.offsetY
-			?	doProc( mu )
-			:	cancelProc && cancelProc()
+		,	Equal( ControlXY( mu ), mdXY )
+			?	cancelProc && cancelProc()
+			:	doProc( mu )
 		)
 	)
+
+	const
+	NR = ev => NormalRect( ...mdXY, ...ControlXY( ev ) )
+
 	const
 	PCGeneric = ( $, pathProc ) => Generic(
-		mm => c2d.stroke( pathProc( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
+		mm => c2d.stroke( pathProc( NR( mm ) ) )
 	,	mu => (
 			PC_TYPE.textContent = $
 		,	PC.value = ''
 		,	DIALOG_PC_OK.onclick = () => {
 				DIALOG_PC.close()
-				const e = [ NewID(), $, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PC.value ]
+				const e = [ NewID(), $, NR( mu ), PC.value ]
 				Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 			}
 		,	DIALOG_PC_CANCEL.onclick = () => DIALOG_PC.close()
@@ -584,18 +599,18 @@ CONTROL_C.onmousedown = md => {
 	)
 	const
 	RelationGeneric = $ => {
-		const s = elements.find( e => c2d.isPointInPath( ElementPath( e ), md.offsetX, md.offsetY ) )
+		const s = elements.find( e => c2d.isPointInPath( ElementPath( e ), ...mdXY ) )
 		s && s[ 1 ] !== 'COMMENT' && Generic(
 			mm => (
 				c2d.beginPath()
-			,	c2d.moveTo( md.offsetX, md.offsetY )
-			,	c2d.lineTo( mm.offsetX, mm.offsetY )
+			,	c2d.moveTo( ...mdXY )
+			,	c2d.lineTo( ...ControlXY( mm ) )
 			,	c2d.setLineDash( Dash( $ ) )
 			,	c2d.stroke()
 			,	c2d.setLineDash( [] )
 			)
 		,	mu => {
-				const d = elements.find( e => c2d.isPointInPath( ElementPath( e ), mu.offsetX, mu.offsetY ) )
+				const d = elements.find( e => c2d.isPointInPath( ElementPath( e ), ...ControlXY( mu ) ) )
 				if (
 					d
 				&&	d[ 1 ] !== 'COMMENT'
@@ -613,8 +628,8 @@ CONTROL_C.onmousedown = md => {
 
 	switch ( mode ) {
 	case 'SELECT'	:
-		{	selection.some( e => HitRect( e[ 2 ], [ md.offsetX, md.offsetY ] ) ) || (
-				selection = elements.filter( e => HitRect( e[ 2 ], [ md.offsetX, md.offsetY ] ) )
+		{	selection.some( e => HitRect( e[ 2 ], mdXY ) ) || (
+				selection = elements.filter( e => HitRect( e[ 2 ], mdXY ) )
 			,	DrawElements()
 			)
 			if ( selection.length ) {
@@ -622,7 +637,7 @@ CONTROL_C.onmousedown = md => {
 				Generic(
 					mm => (
 						selection.forEach(
-							( e, _ ) => e[ 2 ] = MoveRect( oldRects[ _ ], [ mm.offsetX - md.offsetX, mm.offsetY - md.offsetY ] )
+							( e, _ ) => e[ 2 ] = MoveRect( oldRects[ _ ], Sub( ControlXY( mm ), mdXY ) )
 						)
 					,	DrawElements( true )
 					)
@@ -637,7 +652,7 @@ CONTROL_C.onmousedown = md => {
 				,	() => DrawElements()
 				)
 			} else {
-				selection = elements.filter( e => c2d.isPointInPath( ElementPath( e ), md.offsetX, md.offsetY ) )
+				selection = elements.filter( e => c2d.isPointInPath( ElementPath( e ), ...mdXY ) )
 				DrawElements()
 				if ( selection.length ) {
 					const oldRects = selection.map( e => [ ...e[ 2 ] ] )
@@ -647,12 +662,13 @@ CONTROL_C.onmousedown = md => {
 							selection.forEach(
 								( e, _ ) => {
 									let [ x, y, X, Y ] = oldRects[ _ ]
-									md.offsetX < centers[ _ ][ 0 ]
-									?	x += mm.offsetX - md.offsetX
-									:	X += mm.offsetX - md.offsetX
-									md.offsetY < centers[ _ ][ 1 ]
-									?	y += mm.offsetY - md.offsetY
-									:	Y += mm.offsetY - md.offsetY
+									const mmXY = ControlXY( mm )
+									mdXY[ 0 ] < centers[ _ ][ 0 ]
+									?	x += mmXY[ 0 ] - mdXY[ 0 ]
+									:	X += mmXY[ 0 ] - mdXY[ 0 ]
+									mdXY[ 1 ] < centers[ _ ][ 1 ]
+									?	y += mmXY[ 1 ] - mdXY[ 1 ]
+									:	Y += mmXY[ 1 ] - mdXY[ 1 ]
 									e[ 2 ] = NormalRect( x, y, X, Y )
 								}
 							)
@@ -670,9 +686,9 @@ CONTROL_C.onmousedown = md => {
 					)
 				} else {
 					Generic(
-						mm => c2d.strokeRect( md.offsetX, md.offsetY, mm.offsetX - md.offsetX, mm.offsetY - md.offsetY )
+						mm => c2d.strokeRect( ...mdXY, ...Sub( ControlXY( mm ), mdXY ) )
 					,	mu => {
-							const rect = NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY )
+							const rect = NR( mu )
 							selection = elements.filter( e => InRect( e[ 2 ], rect ) )
 							DrawElements()
 						}
@@ -683,12 +699,12 @@ CONTROL_C.onmousedown = md => {
 		break
 	case 'FILE'	:
 		Generic(
-			mm => c2d.stroke( FilePath( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
+			mm => c2d.stroke( FilePath( NR( mm ) ) )
 		,	mu => ( DIALOG_TYPE_NEW.checked ? window.invokeSaveDialog : window.invokeOpenDialog )( PATH_TYPE_ABSOLUTE.checked ).then(
 				$ => (
 					$.forEach(
 						$ => {
-							const e = [ NewID(), 'FILE', NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), $ ]
+							const e = [ NewID(), 'FILE', NR( mu ), $ ]
 							Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 						}
 					)
@@ -717,14 +733,14 @@ CONTROL_C.onmousedown = md => {
 		break
 	case 'PROGRAM'		:
 		Generic(
-			mm => c2d.stroke( ProcPath( NormalRect( md.offsetX, md.offsetY, mm.offsetX, mm.offsetY ) ) )
+			mm => c2d.stroke( ProcPath( NR( mm ) ) )
 		,	mu => (
 				RemoveChildren( EXTENSION )
 			,	Object.keys( ExtensionDict ).forEach( $ => EXTENSION.appendChild( OptionElement( $ ) ) )
 			,	PROGRAM.value = ''
 			,	DIALOG_PROGRAM_OK.onclick = () => {
 					DIALOG_PROGRAM.close()
-					const e = [ NewID(), EXTENSION.value, NormalRect( md.offsetX, md.offsetY, mu.offsetX, mu.offsetY ), PROGRAM.value ]
+					const e = [ NewID(), EXTENSION.value, NR( mu ), PROGRAM.value ]
 					Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 				}
 			,	DIALOG_PROGRAM_CANCEL.onclick = () => DIALOG_PROGRAM.close()
