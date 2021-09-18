@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
 <link rel="stylesheet" type="text/css" href="index.css" />
 
-<header>
+<header id=HEADER>
 <span id=APP_NAME>JobFlower</span>
 <input type=button		id=MODE_SELECT		value=Select(S)			>
 <input type=button		id=MODE_EXEC		value=Exec(E)			>
@@ -20,13 +20,13 @@
 <input type=button		id=MODE_IMP			value="Hard coded(H)"	>
 <input type=button		id=CANVAS_SIZE		value="Canvas size"		>
 </header>
-<nav>
+<nav id=NAV>
 </nav>
-<main>
+<main id=MAIN>
 	<canvas id=ELEMENT_C width=2048 height=1024>			</canvas>
 	<canvas id=CONTROL_C width=2048 height=1024 tabindex=0>	</canvas>
 </main>
-<aside>
+<aside id=ASIDE>
 	<span>stdout:</span><input type=button id=CLEAR_OUT_TA value=Clear><input type=button id=COPY_OUT_TA value=Copy><br>
 	<textarea id=OUT_TA readonly cols=40 rows=12></textarea><br>
 	<span>stderr:</span><input type=button id=CLEAR_ERR_TA value=Clear><input type=button id=COPY_ERR_TA value=Copy><br>
@@ -34,7 +34,7 @@
 	<span>SYSTEM:</span><input type=button id=CLEAR_SYS_TA value=Clear><input type=button id=COPY_SYS_TA value=Copy><br>
 	<textarea id=SYS_TA readonly cols=40 rows=12></textarea><br>
 </aside>
-<footer>(C)2021 SliP LLC, Tokyo. Written by Satoru Ogura</footer>
+<footer id=FOOTER>(C)2021 SliP LLC, Tokyo. Written by Satoru Ogura</footer>
 
 <dialog id=DIALOG_PROGRAM>
 	<select id=EXTENSION></select><br>

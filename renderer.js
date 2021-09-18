@@ -549,9 +549,22 @@ ControlXY = ev => {
 	return [ ev.clientX - o.left, ev.clientY - o.top ]
 }
 
+const
+HitHTMLElement = ( e, ev ) => {
+	const o = e.getBoundingClientRect()
+	return HitRect( [ o.left, o.top, o.left + o.width, o.top + o.height ], [ ev.clientX, ev.clientY ] )
+}
+
 document.onmousedown = md => {
 
 	if ( md.button ) return
+
+	if (
+		HitHTMLElement( HEADER, md )
+	||	HitHTMLElement( FOOTER, md )
+	||	HitHTMLElement( NAV, md )
+	||	HitHTMLElement( ASIDE, md )
+	) return
 
 	const
 	mdXY = ControlXY( md )
