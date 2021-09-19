@@ -1,44 +1,51 @@
 const
 platform = window.platform()
 
-const
-Sub			= ( p, q ) => p.map( ( $, _ ) => $ - q[ _ ] )
+//	POINT
 
 const
-Equal		= ( p, q ) => p.every( ( $, _ ) => $ === q[ _ ] )
+Sub			= ( p, q ) => p.map( ( P, _ ) => P - q[ _ ] )
 
 const
-Center		= ( [ x, y, X, Y ] ) => [ ( x + X ) / 2, ( y + Y ) / 2 ]
+Equal		= ( p, q ) => p.every( ( P, _ ) => P === q[ _ ] )
+
+//	RANGE	( MUST BE NORMALIZED )
 
 const
-MoveRect	= ( [ x, y, X, Y ], [ moveX, moveY ] ) => [ x + moveX, y + moveY, X + moveX, Y + moveY ]
-
-//	RECT MUST BE NORMALIZED
+Normal		= $ => $.map( $ => $[ 0 ] > $[ 1 ] ? $.reverse() : $ )
 
 const
-NormalRect	= ( x, y, X, Y ) => [
-	x < X ? x : X
-,	y < Y ? y : Y
-,	x > X ? x : X
-,	y > Y ? y : Y
-]
+Center		= $ => $.map( $ => ( $[ 0 ] + $[ 1 ] ) / 2 )
 
 const
-OrRect		= ( [ x0, y0, X0, Y0 ], [ x1, y1, X1, Y1 ] ) => [
-	x0 < x1 ? x0 : x1
-,	y0 < y1 ? y0 : y1
-,	X0 > X1 ? X0 : X1
-,	Y0 > Y1 ? Y0 : Y1
-]
+Or			= ( p, q ) => p.map(
+	( P, _ ) => {
+		const Q = q[ _ ]
+		return [
+			P[ 0 ] < Q[ 0 ] ? P[ 0 ] : Q[ 0 ]
+		,	P[ 1 ] > Q[ 1 ] ? P[ 1 ] : Q[ 1 ]
+		]
+	}
+)
 
 const
-EqualRect	= ( [ x0, y0, X0, Y0 ], [ x1, y1, X1, Y1 ] ) => x0 === x1 && y0 === y1 && X0 === X1 && Y0 === Y1
+EqualRange	= ( p, q ) => p.every( ( P, _ ) => P[ 0 ] === q[ _ ][ 0 ] && P[ 1 ] === q[ _ ][ 1 ] )
 
 const
-HitRect		= ( [ x, y, X, Y ], [ offX, offY ] ) => x < offX && offX < X && y < offY && offY < Y
+InRange		= ( p, q ) => EqualRange( Or( p, q ), q )
+
+//	COMBINATION
 
 const
-InRect		= ( r0, r1 ) => EqualRect( OrRect( r0, r1 ), r1 )
+HitRange	= ( p, r ) => p.every( ( P, _ ) => r[ _ ][ 0 ] < P && P < r[ _ ][ 1 ] )
+
+const
+MoveRange	= ( p, r ) => p.map( ( P, _ ) => [ r[ _ ][ 0 ] + P, r[ _ ][ 1 ] + P ] )
+
+const
+RectRange	= ( p, q ) => Normal( [ [ p[ 0 ], q[ 0 ] ], [ p[ 1 ], q[ 1 ] ] ] )
+
+//	APPLICATION
 
 const
 ExtensionDict = {
@@ -60,7 +67,7 @@ var
 relations	= []	//	[ type: S, id: S, id: S ] 	type: ARG, STD, IMP
 
 var
-elements	= []	//	[ id: S, type: S, rect:[ N, N, N, N ], supp: ANY ]	type: proc, EXEC, SPAWN, FILE, COMMENT
+elements	= []	//	[ id: S, type: S, rect:[ [ x, X ], [ y, Y ] ], supp: ANY ]	type: proc, EXEC, SPAWN, FILE, COMMENT
 
 const
 Validate	= () => {
@@ -147,7 +154,7 @@ const
 To			= id => Detail( id, 2 )[ 0 ]
 
 const
-FilePath	= ( [ x, y, X, Y ] ) => {
+FilePath	= ( [ [ x, X ], [ y, Y ] ] ) => {
 	const _ = new Path2D()
 	_.moveTo( x, y )
 	_.lineTo( X, y )
@@ -159,7 +166,7 @@ FilePath	= ( [ x, y, X, Y ] ) => {
 }
 
 const
-CommentPath	= ( [ x, y, X, Y ] ) => {
+CommentPath	= ( [ [ x, X ], [ y, Y ] ] ) => {
 	const _ = new Path2D()
 	_.moveTo( X, y )
 	_.quadraticCurveTo( X + F2, y, X + F2, y + F2 )
@@ -174,7 +181,7 @@ CommentPath	= ( [ x, y, X, Y ] ) => {
 }
 
 const
-ProcPath	= ( [ x, y, X, Y ] ) => {
+ProcPath	= ( [ [ x, X ], [ y, Y ] ] ) => {
 	const _ = new Path2D()
 	_.rect( x - F2, y, X - x + F4, Y - y )
 	_.closePath()
@@ -303,7 +310,7 @@ DrawElements = moving => (
 			e2d.beginPath()
 			const slope1 = Math.atan2( ...Sub( l, m ).reverse() )
 			const slope2 = slope1 + Math.PI / 2
-			const [ x, y ] = Center( [ ...m, ...l ] )
+			const [ x, y ] = Center( RectRange( m, l ) )
 			const X = Math.cos( slope2 ) * 4
 			const Y = Math.sin( slope2 ) * 4
 			e2d.moveTo( x - X, y - Y )
@@ -327,7 +334,7 @@ DrawElements = moving => (
 			e2d.stroke( path )
 			e2d.strokeStyle = 'black'
 
-			const [ x, y, X, Y ] = e[ 2 ]
+			const [ [ x, X ], [ y, Y ] ] = e[ 2 ]
 
 //	ID
 			e2d.font = '12px monospace'
@@ -552,7 +559,7 @@ ControlXY = ev => {
 const
 HitHTMLElement = ( e, ev ) => {
 	const o = e.getBoundingClientRect()
-	return HitRect( [ o.left, o.top, o.left + o.width, o.top + o.height ], [ ev.clientX, ev.clientY ] )
+	return HitRange( [ ev.clientX, ev.clientY ], [ [ o.left, o.left + o.width ], [ o.top, o.top + o.height ] ] )
 }
 
 document.onmousedown = md => {
@@ -570,7 +577,7 @@ document.onmousedown = md => {
 	mdXY = ControlXY( md )
 
 	if ( md.detail > 1 ) {
-		const e = elements.find( e => HitRect( e[ 2 ], mdXY ) )
+		const e = elements.find( e => HitRange( mdXY, e[ 2 ] ) )
 		e && EditElement( e )
 		return
 	}
@@ -592,17 +599,17 @@ document.onmousedown = md => {
 	)
 
 	const
-	NR = ev => NormalRect( ...mdXY, ...ControlXY( ev ) )
+	RR = ev => RectRange( mdXY, ControlXY( ev ) )
 
 	const
 	PCGeneric = ( $, pathProc ) => Generic(
-		mm => c2d.stroke( pathProc( NR( mm ) ) )
+		mm => c2d.stroke( pathProc( RR( mm ) ) )
 	,	mu => (
 			PC_TYPE.textContent = $
 		,	PC.value = ''
 		,	DIALOG_PC_OK.onclick = () => {
 				DIALOG_PC.close()
-				const e = [ NewID(), $, NR( mu ), PC.value ]
+				const e = [ NewID(), $, RR( mu ), PC.value ]
 				Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 			}
 		,	DIALOG_PC_CANCEL.onclick = () => DIALOG_PC.close()
@@ -641,8 +648,8 @@ document.onmousedown = md => {
 
 	switch ( mode ) {
 	case 'SELECT'	:
-		{	selection.some( e => HitRect( e[ 2 ], mdXY ) ) || (
-				selection = elements.filter( e => HitRect( e[ 2 ], mdXY ) )
+		{	selection.some( e => HitRange( mdXY, e[ 2 ] ) ) || (
+				selection = elements.filter( e => HitRange( mdXY, e[ 2 ] ) )
 			,	DrawElements()
 			)
 			if ( selection.length ) {
@@ -650,7 +657,7 @@ document.onmousedown = md => {
 				Generic(
 					mm => (
 						selection.forEach(
-							( e, _ ) => e[ 2 ] = MoveRect( oldRects[ _ ], Sub( ControlXY( mm ), mdXY ) )
+							( e, _ ) => e[ 2 ] = MoveRange( Sub( ControlXY( mm ), mdXY ), oldRects[ _ ] )
 						)
 					,	DrawElements( true )
 					)
@@ -674,7 +681,7 @@ document.onmousedown = md => {
 						mm => (
 							selection.forEach(
 								( e, _ ) => {
-									let [ x, y, X, Y ] = oldRects[ _ ]
+									let [ [ x, X ], [ y, Y ] ] = oldRects[ _ ]
 									const mmXY = ControlXY( mm )
 									mdXY[ 0 ] < centers[ _ ][ 0 ]
 									?	x += mmXY[ 0 ] - mdXY[ 0 ]
@@ -682,7 +689,7 @@ document.onmousedown = md => {
 									mdXY[ 1 ] < centers[ _ ][ 1 ]
 									?	y += mmXY[ 1 ] - mdXY[ 1 ]
 									:	Y += mmXY[ 1 ] - mdXY[ 1 ]
-									e[ 2 ] = NormalRect( x, y, X, Y )
+									e[ 2 ] = RectRange( [ x, y ], [ X, Y ] )
 								}
 							)
 						,	DrawElements( true )
@@ -701,8 +708,8 @@ document.onmousedown = md => {
 					Generic(
 						mm => c2d.strokeRect( ...mdXY, ...Sub( ControlXY( mm ), mdXY ) )
 					,	mu => {
-							const rect = NR( mu )
-							selection = elements.filter( e => InRect( e[ 2 ], rect ) )
+							const range = RR( mu )
+							selection = elements.filter( e => InRange( e[ 2 ], range ) )
 							DrawElements()
 						}
 					)
@@ -712,12 +719,12 @@ document.onmousedown = md => {
 		break
 	case 'FILE'	:
 		Generic(
-			mm => c2d.stroke( FilePath( NR( mm ) ) )
+			mm => c2d.stroke( FilePath( RR( mm ) ) )
 		,	mu => ( DIALOG_TYPE_NEW.checked ? window.invokeSaveDialog : window.invokeOpenDialog )( PATH_TYPE_ABSOLUTE.checked ).then(
 				$ => (
 					$.forEach(
 						$ => {
-							const e = [ NewID(), 'FILE', NR( mu ), $ ]
+							const e = [ NewID(), 'FILE', RR( mu ), $ ]
 							Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 						}
 					)
@@ -746,14 +753,14 @@ document.onmousedown = md => {
 		break
 	case 'PROGRAM'		:
 		Generic(
-			mm => c2d.stroke( ProcPath( NR( mm ) ) )
+			mm => c2d.stroke( ProcPath( RR( mm ) ) )
 		,	mu => (
 				RemoveChildren( EXTENSION )
 			,	Object.keys( ExtensionDict ).forEach( $ => EXTENSION.appendChild( OptionElement( $ ) ) )
 			,	PROGRAM.value = ''
 			,	DIALOG_PROGRAM_OK.onclick = () => {
 					DIALOG_PROGRAM.close()
-					const e = [ NewID(), EXTENSION.value, NR( mu ), PROGRAM.value ]
+					const e = [ NewID(), EXTENSION.value, RR( mu ), PROGRAM.value ]
 					Job( () => elements.push( e ), () => elements = elements.filter( $ => $ !== e ) )
 				}
 			,	DIALOG_PROGRAM_CANCEL.onclick = () => DIALOG_PROGRAM.close()
@@ -835,7 +842,7 @@ Paste = () => {
 				selection = []
 				toPaste.elements.forEach(
 					e => {
-						const newE = [ NewID(), e[ 1 ], MoveRect( e[ 2 ], [ 16, 16 ] ), e[ 3 ] ]
+						const newE = [ NewID(), e[ 1 ], MoveRange( [ 16, 16 ], e[ 2 ] ), e[ 3 ] ]
 						_[ e[ 0 ] ] = newE[ 0 ]
 						elements.push( newE )
 						selection.push( newE )
