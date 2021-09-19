@@ -67,9 +67,22 @@ SaveDialog = async () => {
 	)
 }
 
+app.on(
+	'will-finish-launching'
+,	() => app.once(
+		'open-file'
+	,	( ev, file ) => (
+			ev.preventDefault()
+		,	dialog.showErrorBox( 'OPEN:', file )
+		)
+	)
+)
+
 //app.commandLine.appendSwitch( 'js-flags', '--max-old-space-size=4096' )
 app.whenReady().then(
 	() => {
+
+		dialog.showErrorBox( 'ARGV:', process.argv.slice( 1 ).join( ',' ) )
 
 		app.on(
 			'activate'
