@@ -79,9 +79,11 @@ app.once(
 app.whenReady().then(
 	() => {
 
+		process.argv.length > 1 : fileToOpen = process.argv[ 1 ]
+
 		fileToOpen 
 		?	CreateWindow( file )
-		:	OpenDialog()
+		:	SaveDialog()
 
 		app.on(	//	mac
 			'open-file'
