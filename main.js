@@ -67,24 +67,28 @@ SaveDialog = async () => {
 	)
 }
 
-app.on(
-	'will-finish-launching'
-,	() => app.once(
-		'open-file'
-	,	( ev, file ) => (
-			ev.preventDefault()
-		,	dialog.showErrorBox( 'OPEN:', file )
-		)
-	)
+let
+fileToOpen = null
+
+app.once(
+	'open-file'
+,	( ev, file ) => fileToOpen = file
 )
 
 //app.commandLine.appendSwitch( 'js-flags', '--max-old-space-size=4096' )
 app.whenReady().then(
 	() => {
 
-		dialog.showErrorBox( 'ARGV:', process.argv.slice( 1 ).join( ',' ) )
+		fileToOpen 
+		?	CreateWindow( file )
+		:	OpenDialog()
 
-		app.on(
+		app.on(	//	mac
+			'open-file'
+		,	( ev, file ) => CreateWindow( file )
+		)
+
+		app.on(	//	mac
 			'activate'
 		,	( event, hasVisibleWindows ) => hasVisibleWindows || SaveDialog()
 		)
@@ -130,8 +134,6 @@ app.whenReady().then(
 		fileMenu.insert( 4, new MenuItem( { type: 'separator' } ) )
 
 		Menu.setApplicationMenu( mBar )
-
-		OpenDialog()
 	}
 )
 
